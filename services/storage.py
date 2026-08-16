@@ -5,7 +5,6 @@ from fastapi import UploadFile, HTTPException, status
 
 from config import SUPABASE_BUCKET, SUPABASE_BADGE_BUCKET
 from services.supabase_client import get_supabase_client
-from utils.certificate_id import generate_certificate_id
 from utils.badge_id import generate_badge_id
 
 ALLOWED_BADGE_CONTENT_TYPES = ["image/png", "image/jpeg"]
@@ -44,7 +43,6 @@ async def upload_badge(file: UploadFile) -> dict:
  
     file_bytes = await file.read()
     suffix = Path(file.filename or "badge").suffix
-    file_path = f"{generate_certificate_id()}{suffix}"
     file_path = f"{generate_badge_id()}{suffix}"
  
     storage.upload(
