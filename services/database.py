@@ -10,6 +10,7 @@ from models.models import (
 )
 from services.supabase_client import get_supabase_client
 from utils.certificate_id import generate_certificate_id
+from utils.badge_id import generate_badge_id
 
 audit_logger = logging.getLogger("certify.audit")
 
@@ -175,6 +176,19 @@ def get_all_certificates(template_id: int | None = None, recipient_email: str | 
 
 	return response.data
 
+def get_badge_by_id(badge_id: str) -> dict:
+  client = get_supabase_client()
+  response = client.table("badges").select("id, created_at, template_id, recipient_name, recipient_email, event_name, event_date, event_location, issuer_name, course_name, issue_reason, notes, badge_id").eq("badge_id", badge_id).limit(1).execute()
+  
+  if not response.data:
+    raise ValueError("Badge not found")
+  
+  badge = response.data[0]
+  template_response = client.table("badge_templates").select("id, template_name, template_for, url").eq("id", badge["template_id"]).limit(1).execute()
+  badge["badge_template"] = template_response.data[0] if template_response.data else None
+  
+  return badge
+
 def add_badge_template(url: str, request: AddBadgeTemplateRequestModel) -> dict:
 	client = get_supabase_client()
 
@@ -192,7 +206,6 @@ def add_badge_template(url: str, request: AddBadgeTemplateRequestModel) -> dict:
 		raise ValueError("Failed to insert badge template record")
 
 	return response.data[0]
-
 
 def add_badge(request: AddBadgeRequestModel) -> dict:
 	client = get_supabase_client()
