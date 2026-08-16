@@ -61,6 +61,19 @@ class Badge(BaseModel):
 	notes: str | None = None
 	badge_id: str | None = None
 
+class AddBadgeRequestModel(BaseModel):
+    badge_id: str | None = None
+    template_id: int
+    recipient_name: str
+    recipient_email: str
+    event_name: str | None = None
+    event_date: str | None = None
+    event_location: str | None = None
+    issuer_name: str | None = None
+    course_name: str | None = None
+    issue_reason: str | None = None
+    notes: str | None = None
+    
 
 class AddBadgeTemplateRequestModel(BaseModel):
 	template_name: str

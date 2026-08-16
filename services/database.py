@@ -5,10 +5,12 @@ from models.models import (
 	AddCertificateRequestModel,
 	AddTemplateRequestModel,
 	RevokeCertificateRequestModel,
+	AddBadgeRequestModel
 	AddBadgeTemplateRequestModel,
 )
 from services.supabase_client import get_supabase_client
 from utils.certificate_id import generate_certificate_id
+from utils.badge_id import generate_badge_id
 
 audit_logger = logging.getLogger("certify.audit")
 
@@ -174,6 +176,19 @@ def get_all_certificates(template_id: int | None = None, recipient_email: str | 
 
 	return response.data
 
+def get_badge_by_id(badge_id: str) -> dict:
+  client = get_supabase_client()
+  response = client.table("badges").select("id, created_at, template_id, recipient_name, recipient_email, event_name, event_date, event_location, issuer_name, course_name, issue_reason, notes, badge_id").eq("badge_id", badge_id).limit(1).execute()
+  
+  if not response.data:
+    raise ValueError("Badge not found")
+  
+  badge = response.data[0]
+  template_response = client.table("badge_templates").select("id, template_name, template_for, url").eq("id", badge["template_id"]).limit(1).execute()
+  badge["badge_template"] = template_response.data[0] if template_response.data else None
+  
+  return badge
+
 def add_badge_template(url: str, request: AddBadgeTemplateRequestModel) -> dict:
 	client = get_supabase_client()
 
@@ -189,5 +204,40 @@ def add_badge_template(url: str, request: AddBadgeTemplateRequestModel) -> dict:
 	response = client.table("badge_templates").insert(payload).execute()
 	if not response.data:
 		raise ValueError("Failed to insert badge template record")
+
+	return response.data[0]
+
+def add_badge(request: AddBadgeRequestModel) -> dict:
+	client = get_supabase_client()
+
+	template_resp = (
+		client.table("badge_templates")
+		.select("id")
+		.eq("id", request.template_id)
+		.limit(1)
+		.execute()
+	)
+	if not template_resp.data:
+		raise ValueError(f"Badge template with id={request.template_id} not found")
+
+	badge_id = request.badge_id or generate_badge_id()
+
+	payload = {
+		"badge_id":        badge_id,
+		"template_id":     request.template_id,
+		"recipient_name":  request.recipient_name,
+		"recipient_email": request.recipient_email,
+		"event_name":      request.event_name,
+		"event_date":      request.event_date,
+		"event_location":  request.event_location,
+		"issuer_name":     request.issuer_name,
+		"course_name":     request.course_name,
+		"issue_reason":    request.issue_reason,
+		"notes":           request.notes,
+	}
+
+	response = client.table("badges").insert(payload).execute()
+	if not response.data:
+		raise ValueError("Failed to insert badge record")
 
 	return response.data[0]

@@ -1,8 +1,8 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException, status
-from models.models import AddCertificateRequestModel, AddTemplateRequestModel, RevokeCertificateRequestModel, AddBadgeTemplateRequestModel
-from services.database import add_badge_template, add_certificate, add_template, get_all_templates, get_all_certificates, revoke_certificate
-from services.storage import upload_template, upload_badge, get_all_badge_templates
+from models.models import AddCertificateRequestModel, AddTemplateRequestModel, RevokeCertificateRequestModel, AddBadgeTemplateRequestModel, AddBadgeRequestModel
+from services.database import add_badge, add_badge_template, add_certificate, add_template, get_all_templates, get_all_certificates, revoke_certificate, get_all_badge_templates
+from services.storage import upload_template, upload_badge
 from utils.auth import verify_admin
 
 router = APIRouter(
@@ -95,7 +95,6 @@ def get_all_badges_templates() -> dict:
         "badge_templates": badge_templates
     }
 
-
 @router.post("/certificates/{certificate_id}/revoke")
 def admin_revoke_certificate(certificate_id: str, request: RevokeCertificateRequestModel):
     try:
@@ -109,7 +108,7 @@ def admin_revoke_certificate(certificate_id: str, request: RevokeCertificateRequ
         "certificate": certificate,
     }
 
-@router.post("/add/badge-template")
+  @router.post("/add/badge-template")
 async def admin_add_badge_template(
     template: Annotated[UploadFile, File(...)],
     template_name: Annotated[str, Form(...)],
@@ -130,7 +129,36 @@ async def admin_add_badge_template(
     db_record = add_badge_template(upload_result["public_url"], request_data)
 
     return {
-        "ok": True, 
-        "message": "Badge template added successfully", 
-        "badge_template": db_record
+        "ok": True,
+        "message": "Badge template added successfully",
+        "badge_template": db_record,
+    }
+
+
+@router.post("/add/badge")
+def admin_add_badge(request: AddBadgeRequestModel):
+    try:
+        badge = add_badge(request)
+
+    except ValueError as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(e),
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+    return {
+        "ok": True,
+        "message": "Badge issued successfully",
+        "badge": badge,
     }
