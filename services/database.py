@@ -241,3 +241,48 @@ def add_badge(request: AddBadgeRequestModel) -> dict:
 		raise ValueError("Failed to insert badge record")
 
 	return response.data[0]
+	
+def get_all_badges(
+	template_id: int | None = None,
+	recipient_name: str | None = None,
+	issuer_name: str | None = None,
+	limit: int = 50,
+	offset: int = 0,
+) -> list[dict]:
+	client = get_supabase_client()
+
+	query = client.table("badges").select(
+		"id, created_at, badge_id, template_id, recipient_name, "
+		"recipient_email, event_name, issuer_name, course_name, issue_reason"
+	)
+
+	if template_id is not None:
+		query = query.eq("template_id", template_id)
+	if recipient_name is not None:
+		query = query.ilike("recipient_name", f"%{recipient_name}%")
+	if issuer_name is not None:
+		query = query.ilike("issuer_name", f"%{issuer_name}%")
+
+	query = query.order("created_at", desc=True).range(offset, offset + limit - 1)
+
+	response = query.execute()
+	badges = response.data or []
+
+	if not badges:
+		return []
+
+	template_ids = list({b["template_id"] for b in badges if b.get("template_id")})
+	template_map: dict[int, str] = {}
+	if template_ids:
+		tmpl_resp = (
+			client.table("badge_templates")
+			.select("id, template_name")
+			.in_("id", template_ids)
+			.execute()
+		)
+		template_map = {t["id"]: t["template_name"] for t in (tmpl_resp.data or [])}
+
+	for badge in badges:
+		badge["badge_template_name"] = template_map.get(badge["template_id"])
+
+	return badges

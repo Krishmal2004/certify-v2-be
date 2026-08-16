@@ -1,7 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException, status
 from models.models import AddCertificateRequestModel, AddTemplateRequestModel, RevokeCertificateRequestModel, AddBadgeTemplateRequestModel, AddBadgeRequestModel
-from services.database import add_badge, add_badge_template, add_certificate, add_template, get_all_templates, get_all_certificates, revoke_certificate, get_all_badge_templates
+from services.database import add_badge, add_badge_template, add_certificate, add_template, get_all_templates, get_all_certificates, revoke_certificate, get_all_badge_templates, get_all_badges
 from services.storage import upload_template, upload_badge
 from utils.auth import verify_admin
 
@@ -161,4 +161,28 @@ def admin_add_badge(request: AddBadgeRequestModel):
         "ok": True,
         "message": "Badge issued successfully",
         "badge": badge,
+    }
+
+@router.get("/badges")
+def admin_get_badges(
+    template_id: int | None = None,
+    recipient_name: str | None = None,
+    issuer_name: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    badges = get_all_badges(
+        template_id=template_id,
+        recipient_name=recipient_name,
+        issuer_name=issuer_name,
+        limit=limit,
+        offset=offset,
+    )
+    return {
+        "ok": True,
+        "message": "Badges fetched successfully",
+        "total": len(badges),
+        "limit": limit,
+        "offset": offset,
+        "badges": badges,
     }
