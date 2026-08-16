@@ -126,14 +126,28 @@ async def admin_add_badge_template(
     )
 
     upload_result = await upload_badge(template)
-    db_record = add_badge_template(upload_result["public_url"], request_data)
+    
+    try:
+        db_record = add_badge_template(upload_result["public_url"], request_data)
+    except Exception as exc:
+        try:
+            from services.supabase_client import get_supabase_client
+            from config import SUPABASE_BADGE_BUCKET
+            get_supabase_client().storage.from_(SUPABASE_BADGE_BUCKET).remove(
+                [upload_result["file_path"]]
+            )
+        except Exception:
+            pass 
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save badge template record. Uploaded file removed.",
+        ) from exc
 
     return {
         "ok": True,
         "message": "Badge template added successfully",
         "badge_template": db_record,
     }
-
 
 @router.post("/add/badge")
 def admin_add_badge(request: AddBadgeRequestModel):
