@@ -108,7 +108,7 @@ def admin_revoke_certificate(certificate_id: str, request: RevokeCertificateRequ
         "certificate": certificate,
     }
 
-  @router.post("/add/badge-template")
+@router.post("/add/badge-template")
 async def admin_add_badge_template(
     template: Annotated[UploadFile, File(...)],
     template_name: Annotated[str, Form(...)],
