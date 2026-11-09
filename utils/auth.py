@@ -8,7 +8,7 @@ load_dotenv()
 AUTH_API = os.environ.get("AUTH_API", "https://accounts.sliitmozilla.org/api")
 
 
-async def verify_admin(authorization: str = Header(None)) -> None:
+async def verify_admin(authorization: str = Header(None)) -> dict:
     if authorization is None or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,3 +48,5 @@ async def verify_admin(authorization: str = Header(None)) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin role required",
         )
+
+    return user

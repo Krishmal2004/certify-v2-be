@@ -32,7 +32,6 @@ class AddCertificateRequestModel(BaseModel):
 class RevokeCertificateRequestModel(BaseModel):
 	revoked: bool
 	reason: str | None = None
-	revoked_by: str | None = None
 
 
 class BadgeTemplate(BaseModel):
