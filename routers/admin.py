@@ -96,9 +96,19 @@ def get_all_badges_templates() -> dict:
     }
 
 @router.post("/certificates/{certificate_id}/revoke")
-def admin_revoke_certificate(certificate_id: str, request: RevokeCertificateRequestModel):
+def admin_revoke_certificate(
+    certificate_id: str,
+    request: RevokeCertificateRequestModel,
+    admin_user: Annotated[dict, Depends(verify_admin)],
+):
+    revoked_by = (
+        admin_user.get("email")
+        or admin_user.get("username")
+        or admin_user.get("name")
+        or str(admin_user.get("id"))
+    )
     try:
-        certificate = revoke_certificate(certificate_id, request)
+        certificate = revoke_certificate(certificate_id, request, revoked_by)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 

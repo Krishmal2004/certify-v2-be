@@ -95,7 +95,7 @@ def get_template_by_id(template_id: int) -> dict:
 	return response.data[0]
 
 
-def revoke_certificate(certificate_id: str, request: RevokeCertificateRequestModel) -> dict:
+def revoke_certificate(certificate_id: str, request: RevokeCertificateRequestModel, revoked_by: str) -> dict:
 	client = get_supabase_client()
 
 	# Raises ValueError if the certificate doesn't exist, mirroring the 404 behavior
@@ -106,7 +106,7 @@ def revoke_certificate(certificate_id: str, request: RevokeCertificateRequestMod
 		payload = {
 			"revoked": True,
 			"revoked_at": datetime.now(timezone.utc).isoformat(),
-			"revoked_by": request.revoked_by,
+			"revoked_by": revoked_by,
 			"revoke_reason": request.reason,
 		}
 	else:
@@ -132,7 +132,7 @@ def revoke_certificate(certificate_id: str, request: RevokeCertificateRequestMod
 		extra={
 			"certificate_id": certificate_id,
 			"revoked": request.revoked,
-			"revoked_by": request.revoked_by,
+			"revoked_by": revoked_by,
 			"reason": request.reason,
 		},
 	)
